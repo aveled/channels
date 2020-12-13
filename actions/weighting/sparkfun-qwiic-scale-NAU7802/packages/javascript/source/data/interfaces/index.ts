@@ -12,7 +12,7 @@
 export interface NAU7802 {
     // Check communication and initialize sensor.
     begin(
-        wire: any, // TwoWire &wirePort = Wire,
+        bus: number,
         reset: boolean,
     ): Promise<boolean>;
     // Returns `true` if device ACKs at the I2C address.
@@ -64,31 +64,31 @@ export interface NAU7802 {
     // Set the gain. x1, 2, 4, 8, 16, 32, 64, 128 are available.
     setGain(
         gainValue: number,
-    ): boolean;
+    ): Promise<boolean>;
     // Set the onboard Low-Drop-Out voltage regulator to a given value. 2.4, 2.7, 3.0, 3.3, 3.6, 3.9, 4.2, 4.5V are avaialable.
     setLDO(
         ldoValue: number,
-    ): boolean;
+    ): Promise<boolean>;
     // Set the readings per second. 10, 20, 40, 80, and 320 samples per second is available.
     setSampleRate(
         rate: number,
-    ): boolean;
+    ): Promise<boolean>;
     // Select between 1 and 2.
     setChannel(
         channelNumber: number,
-    ): boolean;
+    ): Promise<boolean>;
 
 
     // Synchronous calibration of the analog front end of the NAU7802. Returns true if CAL_ERR bit is 0 (no error).
-    calibrateAFE(): boolean;
+    calibrateAFE(): Promise<boolean>;
     // Begin asynchronous calibration of the analog front end of the NAU7802. Poll for completion with calAFEStatus() or wait with waitForCalibrateAFE().
-    beginCalibrateAFE(): void;
+    beginCalibrateAFE(): Promise<void>;
     // Wait for asynchronous AFE calibration to complete with optional timeout.
     waitForCalibrateAFE(
         timeout_ms: number,
-    ): boolean;
+    ): Promise<boolean>;
     // Check calibration status.
-    calAFEStatus(): NAU7802_Cal_Status;
+    calAFEStatus(): Promise<NAU7802_Cal_Status>;
 
 
     // Resets all registers to Power Of Defaults
@@ -96,9 +96,9 @@ export interface NAU7802 {
 
 
     // Power up digital and analog sections of scale, ~2mA
-    powerUp(): boolean;
+    powerUp(): Promise<boolean>;
     // Puts scale into low-power 200nA mode.
-    powerDown(): boolean;
+    powerDown(): Promise<boolean>;
 
 
     // Set Int pin to be high when data is ready (default).
@@ -108,7 +108,7 @@ export interface NAU7802 {
 
 
     // Get the revision code of this IC. Always `0x0F`.
-    getRevisionCode(): number;
+    getRevisionCode(): Promise<number>;
 
 
     // Mask & set a given bit within a register.

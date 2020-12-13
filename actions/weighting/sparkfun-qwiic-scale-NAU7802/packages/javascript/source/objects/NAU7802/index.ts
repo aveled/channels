@@ -18,6 +18,8 @@
         PGA_PWR_Bits,
         PU_CTRL_Bits,
         CTRL1_Bits,
+        CTRL2_Bits,
+        NAU7802_Channels,
     } from '#data/enumerations';
     // #endregion external
 // #endregion imports
@@ -25,6 +27,22 @@
 
 
 // #region module
+/**
+ * Wait for a number of milliseconds.
+ *
+ * @param time
+ */
+const delay = async (
+    time: number,
+) => {
+    await new Promise((resolve) => {
+        setTimeout(() => {
+            resolve(true);
+        }, time);
+    });
+}
+
+
 class NAU7802 implements INAU7802 {
     private address: number;
     private instance: i2c.PromisifiedBus | null = null;
@@ -44,21 +62,17 @@ class NAU7802 implements INAU7802 {
     // If initialize is false, then it's up to the caller to initalize and calibrate.
     // Returns true upon completion.
     public async begin(
-        wire: any,
-        initialize: boolean,
+        bus: number,
+        initialize: boolean = true,
     ): Promise<boolean> {
         this.instance = await i2c.openPromisified(
-            wire,
+            bus,
         );
 
         // Check if the device ack's over I2C
         if (!this.isConnected()) {
-            // There are rare times when the sensor is occupied and doesn't ack. A 2nd try resolves this.
-            await new Promise((resolve) => {
-                setTimeout(() => {
-                    resolve(true);
-                }, 500);
-            });
+            // There are rare times when the sensor is occupied and doesn't ACK. A 2nd try resolves this.
+            await delay(500);
 
             if (!this.isConnected()) {
                 return false;
@@ -73,16 +87,16 @@ class NAU7802 implements INAU7802 {
             result = this.reset();
 
             // Power on analog and digital sections of the scale.
-            result = this.powerUp();
+            result = await this.powerUp();
 
             // Set LDO to 3.3V.
-            result = this.setLDO(NAU7802_LDO_Values.NAU7802_LDO_3V3);
+            result = await this.setLDO(NAU7802_LDO_Values.NAU7802_LDO_3V3);
 
             // Set gain to 128.
-            result = this.setGain(NAU7802_Gain_Values.NAU7802_GAIN_128);
+            result = await this.setGain(NAU7802_Gain_Values.NAU7802_GAIN_128);
 
             // Set samples per second to 10.
-            result = this.setSampleRate(NAU7802_SPS_Values.NAU7802_SPS_80);
+            result = await this.setSampleRate(NAU7802_SPS_Values.NAU7802_SPS_80);
 
             // Turn off CLK_CHP. From 9.1 power on sequencing.
             result = await this.setRegister(Scale_Registers.NAU7802_ADC, 0x30);
@@ -94,7 +108,7 @@ class NAU7802 implements INAU7802 {
             );
 
             // Re-cal analog front end when we change gain, sample rate, or channel
-            result = this.calibrateAFE();
+            result = await this.calibrateAFE();
         }
 
         return result;
@@ -232,41 +246,157 @@ class NAU7802 implements INAU7802 {
     }
 
 
-    setGain(
+    // Set the gain
+    // x1, 2, 4, 8, 16, 32, 64, 128 are avaialable.
+    public async setGain(
         gainValue: number,
-    ): boolean {
-        throw new Error('Method not implemented.');
+    ): Promise<boolean> {
+        if (gainValue > 0b111) {
+            // Error check.
+            gainValue = 0b111;
+        }
+
+        let value = await this.getRegister(Scale_Registers.NAU7802_CTRL1);
+        value &= 0b11111000; // Clear gain bits
+        value |= gainValue;  // Mask in new bits
+
+        return this.setRegister(
+            Scale_Registers.NAU7802_CTRL1,
+            value,
+        );
     }
-    setLDO(
+
+    // Set the onboard Low-Drop-Out voltage regulator to a given value.
+    // 2.4, 2.7, 3.0, 3.3, 3.6, 3.9, 4.2, 4.5V are available.
+    public async setLDO(
         ldoValue: number,
-    ): boolean {
-        throw new Error('Method not implemented.');
+    ): Promise<boolean> {
+        if (ldoValue > 0b111) {
+            // Error check.
+            ldoValue = 0b111;
+        }
+
+        // Set the value of the LDO.
+        let value = await this.getRegister(Scale_Registers.NAU7802_CTRL1);
+        value &= 0b11000111;    // Clear LDO bits
+        value |= ldoValue << 3; // Mask in new LDO bits
+
+        this.setRegister(
+            Scale_Registers.NAU7802_CTRL1,
+            value,
+        );
+
+        // Enable the internal LDO.
+        return this.setBit(
+            PU_CTRL_Bits.NAU7802_PU_CTRL_AVDDS,
+            Scale_Registers.NAU7802_PU_CTRL,
+        );
     }
-    setSampleRate(
+
+    // Set the readings per second.
+    // 10, 20, 40, 80, and 320 samples per second is available.
+    public async setSampleRate(
         rate: number,
-    ): boolean {
-        throw new Error('Method not implemented.');
+    ): Promise<boolean> {
+        if (rate > 0b111) {
+            rate = 0b111; //Error check
+        }
+
+        let value = await this.getRegister(Scale_Registers.NAU7802_CTRL2);
+        value &= 0b10001111; // Clear CRS bits
+        value |= rate << 4;  // Mask in new CRS bits
+
+        return this.setRegister(
+            Scale_Registers.NAU7802_CTRL2,
+            value,
+        );
     }
-    setChannel(
+
+    // Select between 1 and 2
+    public async setChannel(
         channelNumber: number,
-    ): boolean {
-        throw new Error('Method not implemented.');
+    ): Promise<boolean> {
+        if (channelNumber == NAU7802_Channels.NAU7802_CHANNEL_1) {
+            // Channel 1 (default)
+            return this.clearBit(
+                CTRL2_Bits.NAU7802_CTRL2_CHS,
+                Scale_Registers.NAU7802_CTRL2,
+            );
+        }
+
+        // Channel 2
+        return this.setBit(
+            CTRL2_Bits.NAU7802_CTRL2_CHS,
+            Scale_Registers.NAU7802_CTRL2,
+        );
     }
 
 
-    calibrateAFE(): boolean {
-        throw new Error('Method not implemented.');
+    // Calibrate analog front end of system. Returns true if CAL_ERR bit is 0 (no error)
+    // Takes approximately 344ms to calibrate; wait up to 1000ms.
+    // It is recommended that the AFE be re-calibrated any time the gain, SPS, or channel number is changed.
+    public async calibrateAFE(): Promise<boolean> {
+        await this.beginCalibrateAFE();
+        return this.waitForCalibrateAFE(1000);
     }
-    beginCalibrateAFE(): void {
-        throw new Error('Method not implemented.');
+
+    // Begin asynchronous calibration of the analog front end.
+    // Poll for completion with calAFEStatus() or wait with waitForCalibrateAFE().
+    public async beginCalibrateAFE(): Promise<void> {
+        await this.setBit(
+            CTRL2_Bits.NAU7802_CTRL2_CALS,
+            Scale_Registers.NAU7802_CTRL2,
+        );
     }
-    waitForCalibrateAFE(
+
+    // Wait for asynchronous AFE calibration to complete with optional timeout.
+    // If timeout is not specified (or set to 0), then wait indefinitely.
+    // Returns true if calibration completes succsfully, otherwise returns false.
+    public async waitForCalibrateAFE(
         timeout_ms: number,
-    ): boolean {
-        throw new Error('Method not implemented.');
+    ): Promise<boolean> {
+        const begin = Date.now();
+        let calReady = await this.calAFEStatus();
+
+        while (
+            calReady == NAU7802_Cal_Status.NAU7802_CAL_IN_PROGRESS
+        ) {
+            if (
+                (timeout_ms > 0) && ((Date.now() - begin) > timeout_ms)
+            ) {
+                break;
+            }
+
+            await delay(10);
+
+            calReady = await this.calAFEStatus();
+        }
+
+        return calReady === NAU7802_Cal_Status.NAU7802_CAL_SUCCESS;
     }
-    calAFEStatus(): NAU7802_Cal_Status {
-        throw new Error('Method not implemented.');
+
+    // Check calibration status.
+    public async calAFEStatus(): Promise<NAU7802_Cal_Status> {
+        const inProgress = await this.getBit(
+            CTRL2_Bits.NAU7802_CTRL2_CALS,
+            Scale_Registers.NAU7802_CTRL2,
+        );
+
+        if (inProgress) {
+            return NAU7802_Cal_Status.NAU7802_CAL_IN_PROGRESS;
+        }
+
+        const failure = await this.getBit(
+            CTRL2_Bits.NAU7802_CTRL2_CAL_ERROR,
+            Scale_Registers.NAU7802_CTRL2,
+        );
+
+        if (failure) {
+            return NAU7802_Cal_Status.NAU7802_CAL_FAILURE;
+        }
+
+        // Calibration passed
+        return NAU7802_Cal_Status.NAU7802_CAL_SUCCESS;
     }
 
 
@@ -275,11 +405,53 @@ class NAU7802 implements INAU7802 {
     }
 
 
-    powerUp(): boolean {
-        throw new Error('Method not implemented.');
+    // Power up digital and analog sections of scale.
+    public async powerUp(): Promise<boolean> {
+        this.setBit(
+            PU_CTRL_Bits.NAU7802_PU_CTRL_PUD,
+            Scale_Registers.NAU7802_PU_CTRL,
+        );
+        this.setBit(
+            PU_CTRL_Bits.NAU7802_PU_CTRL_PUA,
+            Scale_Registers.NAU7802_PU_CTRL,
+        );
+
+        // Wait for Power Up bit to be set - takes approximately 200us
+        let counter = 0;
+        while (true) {
+            const bit = await this.getBit(
+                PU_CTRL_Bits.NAU7802_PU_CTRL_PUR,
+                Scale_Registers.NAU7802_PU_CTRL,
+            );
+
+            if (bit === true) {
+                // Good to go
+                break;
+            }
+
+            await delay(10);
+
+            counter += 1;
+
+            if (counter > 100) {
+                // Error.
+                return false;
+            }
+        }
+
+        return true;
     }
-    powerDown(): boolean {
-        throw new Error('Method not implemented.');
+
+    // Puts scale into low-power mode.
+    public async powerDown(): Promise<boolean> {
+        await this.clearBit(
+            PU_CTRL_Bits.NAU7802_PU_CTRL_PUD,
+            Scale_Registers.NAU7802_PU_CTRL,
+        );
+        return this.clearBit(
+            PU_CTRL_Bits.NAU7802_PU_CTRL_PUA,
+            Scale_Registers.NAU7802_PU_CTRL,
+        );
     }
 
 
@@ -302,8 +474,9 @@ class NAU7802 implements INAU7802 {
     }
 
 
-    getRevisionCode(): number {
-        throw new Error('Method not implemented.');
+    public async getRevisionCode(): Promise<number> {
+        const revisionCode = await this.getRegister(Scale_Registers.NAU7802_DEVICE_REV);
+        return revisionCode & 0x0F;
     }
 
 
