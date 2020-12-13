@@ -498,6 +498,9 @@ class NAU7802 implements INAU7802 {
 
     public async reset(): Promise<boolean> {
         // Set RR.
+        if (this.options.debug) {
+            console.log('NAU7802.reset :: setting PU_CTRL_Bits.NAU7802_PU_CTRL_RR.');
+        }
         await this.setBit(
             PU_CTRL_Bits.NAU7802_PU_CTRL_RR,
             Scale_Registers.NAU7802_PU_CTRL,
@@ -506,6 +509,9 @@ class NAU7802 implements INAU7802 {
         delay(1);
 
         // Clear RR to leave reset state.
+        if (this.options.debug) {
+            console.log('NAU7802.reset :: clearing PU_CTRL_Bits.NAU7802_PU_CTRL_RR.');
+        }
         return this.clearBit(
             PU_CTRL_Bits.NAU7802_PU_CTRL_RR,
             Scale_Registers.NAU7802_PU_CTRL,
@@ -593,7 +599,13 @@ class NAU7802 implements INAU7802 {
         bitNumber: number,
         registerAddress: number,
     ): Promise<boolean> {
-        let value = await this.getRegister(registerAddress) || (1 << bitNumber);
+        let value = await this.getRegister(registerAddress);
+        // Set this bit.
+        value |= (1 << bitNumber);
+
+        if (this.options.debug) {
+            console.log('NAU7802.setBit :: value', value);
+        }
 
         return this.setRegister(
             registerAddress,
@@ -630,6 +642,10 @@ class NAU7802 implements INAU7802 {
         registerAddress: number,
     ): Promise<number> {
         if (!this.instance) {
+            if (this.options.debug) {
+                console.log('NAU7802.getRegister :: no instance');
+            }
+
             return 0;
         }
 
@@ -637,6 +653,9 @@ class NAU7802 implements INAU7802 {
             this.address,
             registerAddress,
         );
+        if (this.options.debug) {
+            console.log('NAU7802.getRegister :: value', value);
+        }
 
         return value;
     }
