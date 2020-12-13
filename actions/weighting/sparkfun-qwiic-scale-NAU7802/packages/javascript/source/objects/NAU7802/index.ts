@@ -401,6 +401,10 @@ class NAU7802 implements INAU7802 {
         value &= 0b10001111; // Clear CRS bits
         value |= rate << 4;  // Mask in new CRS bits
 
+        if (this.options.debug) {
+            console.log('NAU7802.setSampleRate :: value', value);
+        }
+
         return this.setRegister(
             Scale_Registers.NAU7802_CTRL2,
             value,
@@ -689,11 +693,23 @@ class NAU7802 implements INAU7802 {
             return false;
         }
 
-        await this.instance.writeWord(
+        if (this.options.debug) {
+            console.log('NAU7802.setRegister :: value', value);
+        }
+
+        const buffer = Buffer.from(value + '');
+        await this.instance.writeI2cBlock(
             this.address,
             registerAddress,
-            value,
+            buffer.length,
+            buffer,
         );
+
+        // await this.instance.writeWord(
+        //     this.address,
+        //     registerAddress,
+        //     value,
+        // );
 
         return true;
     }
