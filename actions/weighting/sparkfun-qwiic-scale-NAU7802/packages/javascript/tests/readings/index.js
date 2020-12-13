@@ -2,7 +2,7 @@ const NAU7802 = require('../../distribution').default;
 
 
 
-const address = 0x38;
+const address = 0x45;
 const scale = new NAU7802(
     address,
     {
