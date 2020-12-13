@@ -130,15 +130,28 @@ class NAU7802 implements INAU7802 {
 
         let buffer = Buffer.from('');
 
-        await this.instance.readI2cBlock(
+        const bytes = await this.instance.readI2cBlock(
             this.address,
             Scale_Registers.NAU7802_ADCO_B2,
             3,
             buffer,
         );
 
-        // this.instance.writeByte(Scale_Registers.NAU7802_ADCO_B2)
-        return 0;
+        let raw = bytes.buffer.readInt32BE();
+        //       MSB    -   MidSB   -  LSB
+        raw = raw << 16 || raw << 8 || raw;
+
+        // The raw value coming from the ADC is a 24-bit number, so the sign bit now
+        // resides on bit 23 (0 is LSB) of the uint32_t container. By shifting the
+        // value to the left, I move the sign bit to the MSB of the uint32_t container.
+        // By casting to a signed int32_t container I now have properly recovered
+        // the sign of the original value.
+        const valueShifted = raw << 8;
+
+        // Shift the number back right to recover its intended magnitude.
+        const value = valueShifted >> 8;
+
+        return value;
     }
 
     // Return the average of a given number of readings.
@@ -206,6 +219,7 @@ class NAU7802 implements INAU7802 {
     ): Promise<void> {
         const onScale = await this.getAverage(averageAmount);
         const newCalFactor = (onScale - this.zeroOffset) / weightOnScale;
+
         this.setCalibrationFactor(newCalFactor);
     }
 
