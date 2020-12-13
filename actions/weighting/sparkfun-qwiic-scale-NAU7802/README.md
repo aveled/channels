@@ -15,3 +15,7 @@
 <h3 align="center">
     Actions > Weighting > SparkFun Qwiic Scale NAU7802
 </h3>
+
+
+
+The library is based on [SparkFun_Qwiic_Scale_NAU7802_Arduino_Library](https://github.com/sparkfun/SparkFun_Qwiic_Scale_NAU7802_Arduino_Library).
