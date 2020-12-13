@@ -21,28 +21,16 @@
         CTRL2_Bits,
         NAU7802_Channels,
     } from '#data/enumerations';
+
+    import {
+        delay,
+    } from '../../utilities';
     // #endregion external
 // #endregion imports
 
 
 
 // #region module
-/**
- * Wait for a number of milliseconds.
- *
- * @param time
- */
-const delay = async (
-    time: number,
-) => {
-    await new Promise((resolve) => {
-        setTimeout(() => {
-            resolve(true);
-        }, time);
-    });
-}
-
-
 class NAU7802 implements INAU7802 {
     private address: number;
     private instance: i2c.PromisifiedBus | null = null;
@@ -84,7 +72,7 @@ class NAU7802 implements INAU7802 {
 
         if (initialize) {
             // Reset all registers.
-            result = this.reset();
+            result = await this.reset();
 
             // Power on analog and digital sections of the scale.
             result = await this.powerUp();
@@ -135,10 +123,19 @@ class NAU7802 implements INAU7802 {
 
     // Returns 24-bit reading.
     // Assumes CR Cycle Ready bit (ADC conversion complete) has been checked to be 1.
-    public getReading(): number {
+    public async getReading(): Promise<number> {
         if (!this.instance) {
             return 0;
         }
+
+        let buffer = Buffer.from('');
+
+        await this.instance.readI2cBlock(
+            this.address,
+            Scale_Registers.NAU7802_ADCO_B2,
+            3,
+            buffer,
+        );
 
         // this.instance.writeByte(Scale_Registers.NAU7802_ADCO_B2)
         return 0;
@@ -146,9 +143,9 @@ class NAU7802 implements INAU7802 {
 
     // Return the average of a given number of readings.
     // Gives up after 1000ms so don't call this function to average 8 samples setup at 1Hz output (requires 8s).
-    public getAverage(
+    public async getAverage(
         samplesToTake: number,
-    ): number {
+    ): Promise<number> {
         let total = 0;
         let samplesAcquired = 0;
 
@@ -156,7 +153,7 @@ class NAU7802 implements INAU7802 {
 
         while (true) {
             if (this.available()) {
-                total += this.getReading();
+                total += await this.getReading();
                 samplesAcquired += 1;
 
                 if (samplesAcquired === samplesToTake) {
@@ -180,39 +177,41 @@ class NAU7802 implements INAU7802 {
 
 
     // Call when scale is setup, level, at running temperature, with nothing on it.
-    calculateZeroOffset(
+    public async calculateZeroOffset(
         averageAmount: number = 8,
-    ): void {
+    ): Promise<void> {
+        const average = await this.getAverage(averageAmount);
+
         this.setZeroOffset(
-            this.getAverage(averageAmount),
+            average,
         );
     }
 
     // Sets the internal variable. Useful for users who are loading values from NVM.
-    setZeroOffset(
+    public setZeroOffset(
         newZeroOffset: number,
     ): void {
         this.zeroOffset = newZeroOffset;
     }
 
-    getZeroOffset(): number {
+    public getZeroOffset(): number {
         return this.zeroOffset;
     }
 
 
     // Call after zeroing. Provide the float weight sitting on scale. Units do not matter.
-    calculateCalibrationFactor(
+    public async calculateCalibrationFactor(
         weightOnScale: number,
         averageAmount: number = 8,
-    ): void {
-        const onScale = this.getAverage(averageAmount);
+    ): Promise<void> {
+        const onScale = await this.getAverage(averageAmount);
         const newCalFactor = (onScale - this.zeroOffset) / weightOnScale;
         this.setCalibrationFactor(newCalFactor);
     }
 
     // Pass a known calibration factor into library. Helpful if users is loading settings from NVM.
     // If you don't know your cal factor, call setZeroOffset(), then calculateCalibrationFactor() with a known weight.
-    setCalibrationFactor(
+    public setCalibrationFactor(
         calFactor: number,
     ): void {
         this.calibrationFactor = calFactor;
@@ -224,11 +223,11 @@ class NAU7802 implements INAU7802 {
 
 
     // Returns the y of y = mx + b using the current weight on scale, the cal factor, and the offset.
-    getWeight(
+    public async getWeight(
         allowNegativeWeights: boolean = false,
         samplesToTake: number = 8,
-    ): number {
-        let onScale = this.getAverage(samplesToTake);
+    ): Promise<number> {
+        let onScale = await this.getAverage(samplesToTake);
 
         // Prevent the current reading from being less than zero offset.
         // This happens when the scale is zero'd, unloaded, and the load cell reports a value slightly less than zero value
@@ -356,6 +355,7 @@ class NAU7802 implements INAU7802 {
         timeout_ms: number = 0,
     ): Promise<boolean> {
         const begin = Date.now();
+
         let calReady = await this.calAFEStatus();
 
         while (
@@ -367,7 +367,7 @@ class NAU7802 implements INAU7802 {
                 break;
             }
 
-            await delay(10);
+            await delay(1);
 
             calReady = await this.calAFEStatus();
         }
@@ -400,8 +400,20 @@ class NAU7802 implements INAU7802 {
     }
 
 
-    reset(): boolean {
-        throw new Error('Method not implemented.');
+    public async reset(): Promise<boolean> {
+        // Set RR.
+        await this.setBit(
+            PU_CTRL_Bits.NAU7802_PU_CTRL_RR,
+            Scale_Registers.NAU7802_PU_CTRL,
+        );
+
+        delay(1);
+
+        // Clear RR to leave reset state.
+        return this.clearBit(
+            PU_CTRL_Bits.NAU7802_PU_CTRL_RR,
+            Scale_Registers.NAU7802_PU_CTRL,
+        );
     }
 
 
@@ -429,7 +441,7 @@ class NAU7802 implements INAU7802 {
                 break;
             }
 
-            await delay(10);
+            await delay(1);
 
             counter += 1;
 

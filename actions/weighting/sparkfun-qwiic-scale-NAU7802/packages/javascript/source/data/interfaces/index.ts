@@ -22,17 +22,17 @@ export interface NAU7802 {
     // Returns `true` if Cycle Ready bit is set (conversion is complete).
     available(): Promise<boolean>;
     // Returns 24-bit reading. Assumes CR Cycle Ready bit (ADC conversion complete) has been checked by .available().
-    getReading(): number;
+    getReading(): Promise<number>;
     // Return the average of a given number of readings.
     getAverage(
         samplesToTake: number,
-    ): number;
+    ): Promise<number>;
 
 
     // Also called taring. Call this with nothing on the scale;
     calculateZeroOffset(
         averageAmount: number,
-    ): void;
+    ): Promise<void>;
     // Sets the internal variable. Useful for users who are loading values from NVM.
     setZeroOffset(
         newZeroOffset: number,
@@ -45,7 +45,7 @@ export interface NAU7802 {
     calculateCalibrationFactor(
         weightOnScale: number,
         averageAmount: number,
-    ): void;
+    ): Promise<void>;
     // Pass a known calibration factor into library. Helpful if users is loading settings from NVM.
     setCalibrationFactor(
         calFactor: number,
@@ -58,7 +58,7 @@ export interface NAU7802 {
     getWeight(
         allowNegativeWeights: boolean,
         samplesToTake: number,
-    ): number;
+    ): Promise<number>;
 
 
     // Set the gain. x1, 2, 4, 8, 16, 32, 64, 128 are available.
@@ -92,7 +92,7 @@ export interface NAU7802 {
 
 
     // Resets all registers to Power Of Defaults
-    reset(): boolean;
+    reset(): Promise<boolean>;
 
 
     // Power up digital and analog sections of scale, ~2mA
