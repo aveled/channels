@@ -521,10 +521,16 @@ class NAU7802 implements INAU7802 {
 
     // Power up digital and analog sections of scale.
     public async powerUp(): Promise<boolean> {
+        if (this.options.debug) {
+            console.log('NAU7802.powerUp :: setting PU_CTRL_Bits.NAU7802_PU_CTRL_PUD.');
+        }
         this.setBit(
             PU_CTRL_Bits.NAU7802_PU_CTRL_PUD,
             Scale_Registers.NAU7802_PU_CTRL,
         );
+        if (this.options.debug) {
+            console.log('NAU7802.powerUp :: setting PU_CTRL_Bits.NAU7802_PU_CTRL_PUA.');
+        }
         this.setBit(
             PU_CTRL_Bits.NAU7802_PU_CTRL_PUA,
             Scale_Registers.NAU7802_PU_CTRL,
@@ -537,6 +543,9 @@ class NAU7802 implements INAU7802 {
                 PU_CTRL_Bits.NAU7802_PU_CTRL_PUR,
                 Scale_Registers.NAU7802_PU_CTRL,
             );
+            if (this.options.debug) {
+                console.log('NAU7802.powerUp :: bit PU_CTRL_Bits.NAU7802_PU_CTRL_PUR', bit);
+            }
 
             if (bit === true) {
                 // Good to go
@@ -631,7 +640,13 @@ class NAU7802 implements INAU7802 {
         bitNumber: number,
         registerAddress: number,
     ): Promise<boolean> {
-        let value = await this.getRegister(registerAddress) && (1 << bitNumber);
+        let value = await this.getRegister(registerAddress);
+        // Clear all but this bit.
+        value &= (1 << bitNumber);
+
+        if (this.options.debug) {
+            console.log('NAU7802.getBit :: value', value);
+        }
 
         return !!value;
     }
