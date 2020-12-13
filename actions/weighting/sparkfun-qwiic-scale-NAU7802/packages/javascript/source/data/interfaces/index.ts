@@ -17,10 +17,10 @@ export interface NAU7802 {
     ): boolean;
     // Returns `true` if device ACKs at the I2C address.
     isConnected(): boolean;
+
+
     // Returns `true` if Cycle Ready bit is set (conversion is complete).
     available(): boolean;
-
-
     // Returns 24-bit reading. Assumes CR Cycle Ready bit (ADC conversion complete) has been checked by .available().
     getReading(): number;
     // Return the average of a given number of readings.
