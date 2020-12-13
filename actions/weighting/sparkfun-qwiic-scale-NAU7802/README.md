@@ -9,3 +9,9 @@
 <h1 align="center">
     Channels
 </h1>
+
+
+
+<h3 align="center">
+    Actions > Weighting > SparkFun Qwiic Scale NAU7802
+</h3>
