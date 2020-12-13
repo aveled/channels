@@ -14,13 +14,13 @@ export interface NAU7802 {
     begin(
         wire: any, // TwoWire &wirePort = Wire,
         reset: boolean,
-    ): boolean;
+    ): Promise<boolean>;
     // Returns `true` if device ACKs at the I2C address.
     isConnected(): boolean;
 
 
     // Returns `true` if Cycle Ready bit is set (conversion is complete).
-    available(): boolean;
+    available(): Promise<boolean>;
     // Returns 24-bit reading. Assumes CR Cycle Ready bit (ADC conversion complete) has been checked by .available().
     getReading(): number;
     // Return the average of a given number of readings.
@@ -102,9 +102,9 @@ export interface NAU7802 {
 
 
     // Set Int pin to be high when data is ready (default).
-    setIntPolarityHigh(): boolean;
+    setIntPolarityHigh(): Promise<boolean>;
     // Set Int pin to be low when data is ready.
-    setIntPolarityLow(): boolean;
+    setIntPolarityLow(): Promise<boolean>;
 
 
     // Get the revision code of this IC. Always `0x0F`.
@@ -115,27 +115,27 @@ export interface NAU7802 {
     setBit(
         bitNumber: number,
         registerAddress: number,
-    ): boolean;
+    ): Promise<boolean>;
     // Mask & clear a given bit within a register.
     clearBit(
         bitNumber: number,
         registerAddress: number,
-    ): boolean;
+    ): Promise<boolean>;
     // Return a given bit within a register.
     getBit(
         bitNumber: number,
         registerAddress: number,
-    ): boolean;
+    ): Promise<boolean>;
 
 
     // Get contents of a register.
     getRegister(
         registerAddress: number,
-    ): number;
+    ): Promise<number>;
     // Send a given value to be written to given address. Return true if successful.
     setRegister(
         registerAddress: number,
         value: number,
-    ): boolean;
+    ): Promise<boolean>;
 }
 // #endregion module
