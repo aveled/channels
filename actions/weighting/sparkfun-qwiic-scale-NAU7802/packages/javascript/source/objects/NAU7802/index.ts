@@ -528,14 +528,15 @@ class NAU7802 implements INAU7802 {
         if (this.options.debug) {
             console.log('NAU7802.powerUp :: setting PU_CTRL_Bits.NAU7802_PU_CTRL_PUD.');
         }
-        this.setBit(
+        await this.setBit(
             PU_CTRL_Bits.NAU7802_PU_CTRL_PUD,
             Scale_Registers.NAU7802_PU_CTRL,
         );
+
         if (this.options.debug) {
             console.log('NAU7802.powerUp :: setting PU_CTRL_Bits.NAU7802_PU_CTRL_PUA.');
         }
-        this.setBit(
+        await this.setBit(
             PU_CTRL_Bits.NAU7802_PU_CTRL_PUA,
             Scale_Registers.NAU7802_PU_CTRL,
         );
