@@ -9,10 +9,11 @@ const scale = new NAU7802(
         debug: true,
     },
 );
-scale.begin(1);
 
 
-const loopRead = () => {
+const loopRead = async  () => {
+    await scale.begin(1);
+
     while(true) {
         const reading = await scale.getReading();
 
@@ -27,7 +28,9 @@ const loopRead = () => {
 }
 
 
-const singleRead = () => {
+const singleRead = async () => {
+    await scale.begin(1);
+
     const reading = await scale.getReading();
     console.log('reading', reading);
 }
