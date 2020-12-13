@@ -674,13 +674,20 @@ class NAU7802 implements INAU7802 {
             return 0;
         }
 
-        const writeBuffer = Buffer.from('');
-        await this.instance.writeI2cBlock(
-            this.address,
-            registerAddress,
-            0,
-            writeBuffer,
-        );
+
+        // await this.instance.writeQuick(
+        //     this.address,
+        //     registerAddress,
+        //     0,
+        // );
+
+        // const writeBuffer = Buffer.from('');
+        // await this.instance.writeI2cBlock(
+        //     this.address,
+        //     registerAddress,
+        //     0,
+        //     writeBuffer,
+        // );
 
         // const value = await this.instance.readWord(
         //     this.address,
