@@ -627,7 +627,12 @@ class NAU7802 implements INAU7802 {
         bitNumber: number,
         registerAddress: number,
     ): Promise<boolean> {
-        let value = await this.getRegister(registerAddress) && ~(1 << bitNumber);
+        let value = await this.getRegister(registerAddress);
+        value &= ~(1 << bitNumber);
+
+        if (this.options.debug) {
+            console.log('NAU7802.clearBit :: value', value);
+        }
 
         return this.setRegister(
             registerAddress,
