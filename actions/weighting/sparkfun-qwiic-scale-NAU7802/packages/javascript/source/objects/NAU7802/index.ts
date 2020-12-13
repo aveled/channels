@@ -7,6 +7,7 @@
     // #region external
     import {
         NAU7802 as INAU7802,
+        NAU7802Options,
     } from '#data/interfaces';
 
     import {
@@ -36,12 +37,18 @@ class NAU7802 implements INAU7802 {
     private instance: i2c.PromisifiedBus | null = null;
     private zeroOffset = 0;
     private calibrationFactor = 0;
+    private options: NAU7802Options;
 
 
     constructor(
         address: number,
+        options?: NAU7802Options,
     ) {
         this.address = address;
+
+        this.options = {
+            debug: options?.debug ?? false,
+        };
     }
 
 
@@ -53,6 +60,10 @@ class NAU7802 implements INAU7802 {
         bus: number,
         initialize: boolean = true,
     ): Promise<boolean> {
+        if (this.options.debug) {
+            console.log('NAU7802.begin');
+        }
+
         this.instance = await i2c.openPromisified(
             bus,
         );
@@ -73,30 +84,70 @@ class NAU7802 implements INAU7802 {
         if (initialize) {
             // Reset all registers.
             result = await this.reset();
+            if (result && this.options.debug) {
+                console.log('NAU7802.begin :: reset.');
+            } else {
+                console.log('NAU7802.begin :: Could not reset.');
+            }
 
             // Power on analog and digital sections of the scale.
             result = await this.powerUp();
+            if (result && this.options.debug) {
+                console.log('NAU7802.begin :: powerUp.');
+            } else {
+                console.log('NAU7802.begin :: Could not powerUp.');
+            }
 
             // Set LDO to 3.3V.
             result = await this.setLDO(NAU7802_LDO_Values.NAU7802_LDO_3V3);
+            if (result && this.options.debug) {
+                console.log('NAU7802.begin :: setLDO.');
+            } else {
+                console.log('NAU7802.begin :: Could not setLDO.');
+            }
 
             // Set gain to 128.
             result = await this.setGain(NAU7802_Gain_Values.NAU7802_GAIN_128);
+            if (result && this.options.debug) {
+                console.log('NAU7802.begin :: setGain.');
+            } else {
+                console.log('NAU7802.begin :: Could not setGain.');
+            }
 
             // Set samples per second to 10.
             result = await this.setSampleRate(NAU7802_SPS_Values.NAU7802_SPS_80);
+            if (result && this.options.debug) {
+                console.log('NAU7802.begin :: setSampleRate.');
+            } else {
+                console.log('NAU7802.begin :: Could not setSampleRate.');
+            }
 
             // Turn off CLK_CHP. From 9.1 power on sequencing.
             result = await this.setRegister(Scale_Registers.NAU7802_ADC, 0x30);
+            if (result && this.options.debug) {
+                console.log('NAU7802.begin :: setRegister.');
+            } else {
+                console.log('NAU7802.begin :: Could not setRegister.');
+            }
 
             // Enable 330pF decoupling cap on chan 2. From 9.14 application circuit note.
             result = await this.setBit(
                 PGA_PWR_Bits.NAU7802_PGA_PWR_PGA_CAP_EN,
                 Scale_Registers.NAU7802_PGA_PWR,
             );
+            if (result && this.options.debug) {
+                console.log('NAU7802.begin :: setBit.');
+            } else {
+                console.log('NAU7802.begin :: Could not setBit.');
+            }
 
             // Re-cal analog front end when we change gain, sample rate, or channel
             result = await this.calibrateAFE();
+            if (result && this.options.debug) {
+                console.log('NAU7802.begin :: calibrateAFE.');
+            } else {
+                console.log('NAU7802.begin :: Could not calibrateAFE.');
+            }
         }
 
         return result;
@@ -106,7 +157,15 @@ class NAU7802 implements INAU7802 {
     // Tests for device ack to I2C address.
     public isConnected(): boolean {
         if (this.instance) {
+            if (this.options.debug) {
+                console.log('NAU7802.isConnected :: connected.');
+            }
+
             return true;
+        }
+
+        if (this.options.debug) {
+            console.log('NAU7802.isConnected :: not connected.');
         }
 
         return false;
@@ -125,6 +184,10 @@ class NAU7802 implements INAU7802 {
     // Assumes CR Cycle Ready bit (ADC conversion complete) has been checked to be 1.
     public async getReading(): Promise<number> {
         if (!this.instance) {
+            if (this.options.debug) {
+                console.log('NAU7802.getReading :: no instance.');
+            }
+
             return 0;
         }
 
@@ -137,9 +200,19 @@ class NAU7802 implements INAU7802 {
             buffer,
         );
 
+        if (this.options.debug) {
+            console.log('NAU7802.getReading :: bytes', bytes);
+        }
+
         let raw = bytes.buffer.readInt32BE();
+        if (this.options.debug) {
+            console.log('NAU7802.getReading :: raw', raw);
+        }
         //       MSB    -   MidSB   -  LSB
         raw = raw << 16 || raw << 8 || raw;
+        if (this.options.debug) {
+            console.log('NAU7802.getReading :: raw transformed', raw);
+        }
 
         // The raw value coming from the ADC is a 24-bit number, so the sign bit now
         // resides on bit 23 (0 is LSB) of the uint32_t container. By shifting the
@@ -147,9 +220,15 @@ class NAU7802 implements INAU7802 {
         // By casting to a signed int32_t container I now have properly recovered
         // the sign of the original value.
         const valueShifted = raw << 8;
+        if (this.options.debug) {
+            console.log('NAU7802.getReading :: raw shifted', valueShifted);
+        }
 
         // Shift the number back right to recover its intended magnitude.
         const value = valueShifted >> 8;
+        if (this.options.debug) {
+            console.log('NAU7802.getReading :: value', value);
+        }
 
         return value;
     }
@@ -184,6 +263,9 @@ class NAU7802 implements INAU7802 {
         }
 
         total /= samplesToTake;
+        if (this.options.debug) {
+            console.log('NAU7802.getAverage :: total', total);
+        }
 
         return total;
     }

@@ -138,4 +138,9 @@ export interface NAU7802 {
         value: number,
     ): Promise<boolean>;
 }
+
+
+export interface NAU7802Options {
+    debug: boolean;
+}
 // #endregion module
