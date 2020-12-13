@@ -23,6 +23,9 @@ const common = {
 
 const build = {
     input: './source/index.ts',
+    external: [
+        'i2c-bus',
+    ],
     output: [
         {
             file: pkg.main,
@@ -34,8 +37,6 @@ const build = {
             format: 'es',
             exports: 'named',
         },
-    ],
-    external: [
     ],
     plugins: [
         ...common.plugins,
