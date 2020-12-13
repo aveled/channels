@@ -181,7 +181,7 @@ class NAU7802 implements INAU7802 {
 
     // Call when scale is setup, level, at running temperature, with nothing on it.
     calculateZeroOffset(
-        averageAmount: number,
+        averageAmount: number = 8,
     ): void {
         this.setZeroOffset(
             this.getAverage(averageAmount),
@@ -203,7 +203,7 @@ class NAU7802 implements INAU7802 {
     // Call after zeroing. Provide the float weight sitting on scale. Units do not matter.
     calculateCalibrationFactor(
         weightOnScale: number,
-        averageAmount: number,
+        averageAmount: number = 8,
     ): void {
         const onScale = this.getAverage(averageAmount);
         const newCalFactor = (onScale - this.zeroOffset) / weightOnScale;
@@ -225,8 +225,8 @@ class NAU7802 implements INAU7802 {
 
     // Returns the y of y = mx + b using the current weight on scale, the cal factor, and the offset.
     getWeight(
-        allowNegativeWeights: boolean,
-        samplesToTake: number,
+        allowNegativeWeights: boolean = false,
+        samplesToTake: number = 8,
     ): number {
         let onScale = this.getAverage(samplesToTake);
 
@@ -353,7 +353,7 @@ class NAU7802 implements INAU7802 {
     // If timeout is not specified (or set to 0), then wait indefinitely.
     // Returns true if calibration completes succsfully, otherwise returns false.
     public async waitForCalibrateAFE(
-        timeout_ms: number,
+        timeout_ms: number = 0,
     ): Promise<boolean> {
         const begin = Date.now();
         let calReady = await this.calAFEStatus();
