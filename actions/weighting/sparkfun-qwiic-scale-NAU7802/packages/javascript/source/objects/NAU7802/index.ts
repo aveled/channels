@@ -681,40 +681,6 @@ class NAU7802 implements INAU7802 {
             addressBuffer,
         );
 
-
-        // await this.instance.writeByte(
-        //     this.address,
-        //     registerAddress,
-        //     1,
-        // );
-
-
-        // await this.instance.writeQuick(
-        //     this.address,
-        //     registerAddress,
-        //     0,
-        // );
-
-        // const writeBuffer = Buffer.from('');
-        // await this.instance.writeI2cBlock(
-        //     this.address,
-        //     registerAddress,
-        //     0,
-        //     writeBuffer,
-        // );
-
-        // const value = await this.instance.readWord(
-        //     this.address,
-        //     registerAddress,
-        // );
-        // let buffer = Buffer.from('');
-        // const bytes = await this.instance.readI2cBlock(
-        //     this.address,
-        //     registerAddress,
-        //     1,
-        //     buffer,
-        // );
-
         const readBuffer = Buffer.alloc(1);
         const bytes = await this.instance.i2cRead(
             this.address,
@@ -724,11 +690,13 @@ class NAU7802 implements INAU7802 {
 
         if (this.options.debug) {
             // console.log('NAU7802.getRegister :: value', value);
+            console.log('NAU7802.getRegister :: readBuffer', readBuffer);
             console.log('NAU7802.getRegister :: bytes', bytes);
-            console.log('NAU7802.getRegister :: value', bytes.buffer.readInt32BE());
+            console.log('NAU7802.getRegister :: bytes.buffer', bytes.buffer);
+            console.log('NAU7802.getRegister :: value', bytes.buffer.readInt8());
         }
 
-        return bytes.buffer.readInt32BE();
+        return bytes.buffer.readInt8();
         // return value;
     }
 
@@ -758,21 +726,6 @@ class NAU7802 implements INAU7802 {
             valueBuffer.length,
             valueBuffer,
         );
-
-
-        // const buffer = Buffer.from(value + '');
-        // await this.instance.writeI2cBlock(
-        //     this.address,
-        //     registerAddress,
-        //     buffer.length,
-        //     buffer,
-        // );
-
-        // await this.instance.writeWord(
-        //     this.address,
-        //     registerAddress,
-        //     value,
-        // );
 
         return true;
     }
