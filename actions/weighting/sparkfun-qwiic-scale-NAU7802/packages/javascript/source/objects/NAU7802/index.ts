@@ -715,15 +715,16 @@ class NAU7802 implements INAU7802 {
         //     buffer,
         // );
 
-        const buffer = Buffer.from('');
+        const readBuffer = Buffer.alloc(1);
         const bytes = await this.instance.i2cRead(
             this.address,
             1,
-            buffer,
+            readBuffer,
         );
 
         if (this.options.debug) {
             // console.log('NAU7802.getRegister :: value', value);
+            console.log('NAU7802.getRegister :: bytes', bytes);
             console.log('NAU7802.getRegister :: value', bytes.buffer.readInt32BE());
         }
 
@@ -751,7 +752,7 @@ class NAU7802 implements INAU7802 {
             addressBuffer,
         );
 
-        const valueBuffer = Buffer.alloc(value);
+        const valueBuffer = Buffer.from([value]);
         await this.instance.i2cWrite(
             this.address,
             valueBuffer.length,
