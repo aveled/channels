@@ -699,10 +699,10 @@ class NAU7802 implements INAU7802 {
             console.log('NAU7802.getRegister :: readBuffer', readBuffer);
             console.log('NAU7802.getRegister :: bytes', bytes);
             console.log('NAU7802.getRegister :: bytes.buffer', bytes.buffer);
-            console.log('NAU7802.getRegister :: value', bytes.buffer.readInt8());
+            console.log('NAU7802.getRegister :: value', bytes.buffer.readUIntBE(0, 1));
         }
 
-        return bytes.buffer.readInt8();
+        return bytes.buffer.readUIntBE(0, 1);
         // return value;
     }
 
