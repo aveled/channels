@@ -674,6 +674,14 @@ class NAU7802 implements INAU7802 {
             return 0;
         }
 
+        const addressBuffer = Buffer.from([registerAddress]);
+        await this.instance.i2cWrite(
+            this.address,
+            addressBuffer.length,
+            addressBuffer,
+        );
+
+
         // await this.instance.writeByte(
         //     this.address,
         //     registerAddress,
@@ -695,10 +703,10 @@ class NAU7802 implements INAU7802 {
         //     writeBuffer,
         // );
 
-        const value = await this.instance.readWord(
-            this.address,
-            registerAddress,
-        );
+        // const value = await this.instance.readWord(
+        //     this.address,
+        //     registerAddress,
+        // );
         // let buffer = Buffer.from('');
         // const bytes = await this.instance.readI2cBlock(
         //     this.address,
@@ -706,13 +714,21 @@ class NAU7802 implements INAU7802 {
         //     1,
         //     buffer,
         // );
+
+        const buffer = Buffer.from('');
+        const bytes = await this.instance.i2cRead(
+            this.address,
+            1,
+            buffer,
+        );
+
         if (this.options.debug) {
-            console.log('NAU7802.getRegister :: value', value);
-            // console.log('NAU7802.getRegister :: value', bytes.buffer.readInt32BE());
+            // console.log('NAU7802.getRegister :: value', value);
+            console.log('NAU7802.getRegister :: value', bytes.buffer.readInt32BE());
         }
 
-        // return bytes.buffer.readInt32BE();
-        return value;
+        return bytes.buffer.readInt32BE();
+        // return value;
     }
 
 
@@ -728,13 +744,28 @@ class NAU7802 implements INAU7802 {
             console.log('NAU7802.setRegister :: value', value);
         }
 
-        const buffer = Buffer.from(value + '');
-        await this.instance.writeI2cBlock(
+        const addressBuffer = Buffer.from([registerAddress]);
+        await this.instance.i2cWrite(
             this.address,
-            registerAddress,
-            buffer.length,
-            buffer,
+            addressBuffer.length,
+            addressBuffer,
         );
+
+        const valueBuffer = Buffer.alloc(value);
+        await this.instance.i2cWrite(
+            this.address,
+            valueBuffer.length,
+            valueBuffer,
+        );
+
+
+        // const buffer = Buffer.from(value + '');
+        // await this.instance.writeI2cBlock(
+        //     this.address,
+        //     registerAddress,
+        //     buffer.length,
+        //     buffer,
+        // );
 
         // await this.instance.writeWord(
         //     this.address,
