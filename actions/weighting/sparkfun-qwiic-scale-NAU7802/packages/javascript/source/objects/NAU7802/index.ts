@@ -84,50 +84,74 @@ class NAU7802 implements INAU7802 {
         if (initialize) {
             // Reset all registers.
             result = await this.reset();
-            if (result && this.options.debug) {
-                console.log('NAU7802.begin :: reset.');
-            } else {
-                console.log('NAU7802.begin :: Could not reset.');
+            if (this.options.debug) {
+                if (result) {
+                    console.log('NAU7802.begin :: reset.');
+                }
+
+                if (!result) {
+                    console.log('NAU7802.begin :: Could not reset.');
+                }
             }
 
             // Power on analog and digital sections of the scale.
             result = await this.powerUp();
-            if (result && this.options.debug) {
-                console.log('NAU7802.begin :: powerUp.');
-            } else {
-                console.log('NAU7802.begin :: Could not powerUp.');
+            if (this.options.debug) {
+                if (result) {
+                    console.log('NAU7802.begin :: powerUp.');
+                }
+
+                if (!result) {
+                    console.log('NAU7802.begin :: Could not powerUp.');
+                }
             }
 
             // Set LDO to 3.3V.
             result = await this.setLDO(NAU7802_LDO_Values.NAU7802_LDO_3V3);
-            if (result && this.options.debug) {
-                console.log('NAU7802.begin :: setLDO.');
-            } else {
-                console.log('NAU7802.begin :: Could not setLDO.');
+            if (this.options.debug) {
+                if (result) {
+                    console.log('NAU7802.begin :: setLDO.');
+                }
+
+                if (!result) {
+                    console.log('NAU7802.begin :: Could not setLDO.');
+                }
             }
 
             // Set gain to 128.
             result = await this.setGain(NAU7802_Gain_Values.NAU7802_GAIN_128);
-            if (result && this.options.debug) {
-                console.log('NAU7802.begin :: setGain.');
-            } else {
-                console.log('NAU7802.begin :: Could not setGain.');
+            if (this.options.debug) {
+                if (result) {
+                    console.log('NAU7802.begin :: setGain.');
+                }
+
+                if (!result) {
+                    console.log('NAU7802.begin :: Could not setGain.');
+                }
             }
 
             // Set samples per second to 10.
             result = await this.setSampleRate(NAU7802_SPS_Values.NAU7802_SPS_80);
-            if (result && this.options.debug) {
-                console.log('NAU7802.begin :: setSampleRate.');
-            } else {
-                console.log('NAU7802.begin :: Could not setSampleRate.');
+            if (this.options.debug) {
+                if (result) {
+                    console.log('NAU7802.begin :: setSampleRate.');
+                }
+
+                if (!result) {
+                    console.log('NAU7802.begin :: Could not setSampleRate.');
+                }
             }
 
             // Turn off CLK_CHP. From 9.1 power on sequencing.
             result = await this.setRegister(Scale_Registers.NAU7802_ADC, 0x30);
-            if (result && this.options.debug) {
-                console.log('NAU7802.begin :: setRegister.');
-            } else {
-                console.log('NAU7802.begin :: Could not setRegister.');
+            if (this.options.debug) {
+                if (result) {
+                    console.log('NAU7802.begin :: setRegister.');
+                }
+
+                if (!result) {
+                    console.log('NAU7802.begin :: Could not setRegister.');
+                }
             }
 
             // Enable 330pF decoupling cap on chan 2. From 9.14 application circuit note.
@@ -135,18 +159,26 @@ class NAU7802 implements INAU7802 {
                 PGA_PWR_Bits.NAU7802_PGA_PWR_PGA_CAP_EN,
                 Scale_Registers.NAU7802_PGA_PWR,
             );
-            if (result && this.options.debug) {
-                console.log('NAU7802.begin :: setBit.');
-            } else {
-                console.log('NAU7802.begin :: Could not setBit.');
+            if (this.options.debug) {
+                if (result) {
+                    console.log('NAU7802.begin :: setBit.');
+                }
+
+                if (!result) {
+                    console.log('NAU7802.begin :: Could not setBit.');
+                }
             }
 
             // Re-cal analog front end when we change gain, sample rate, or channel
             result = await this.calibrateAFE();
-            if (result && this.options.debug) {
-                console.log('NAU7802.begin :: calibrateAFE.');
-            } else {
-                console.log('NAU7802.begin :: Could not calibrateAFE.');
+            if (this.options.debug) {
+                if (result) {
+                    console.log('NAU7802.begin :: calibrateAFE.');
+                }
+
+                if (!result) {
+                    console.log('NAU7802.begin :: Could not calibrateAFE.');
+                }
             }
         }
 
