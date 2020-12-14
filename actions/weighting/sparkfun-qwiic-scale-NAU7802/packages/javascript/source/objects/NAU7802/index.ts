@@ -695,22 +695,24 @@ class NAU7802 implements INAU7802 {
         //     writeBuffer,
         // );
 
-        // const value = await this.instance.readWord(
-        //     this.address,
-        //     registerAddress,
-        // );
-        let buffer = Buffer.from('');
-        const bytes = await this.instance.readI2cBlock(
+        const value = await this.instance.readWord(
             this.address,
             registerAddress,
-            1,
-            buffer,
         );
+        // let buffer = Buffer.from('');
+        // const bytes = await this.instance.readI2cBlock(
+        //     this.address,
+        //     registerAddress,
+        //     1,
+        //     buffer,
+        // );
         if (this.options.debug) {
-            console.log('NAU7802.getRegister :: value', bytes.buffer.readInt32BE());
+            console.log('NAU7802.getRegister :: value', value);
+            // console.log('NAU7802.getRegister :: value', bytes.buffer.readInt32BE());
         }
 
-        return bytes.buffer.readInt32BE();
+        // return bytes.buffer.readInt32BE();
+        return value;
     }
 
 
