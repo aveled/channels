@@ -191,52 +191,60 @@ class NAU7802 implements INAU7802 {
             return 0;
         }
 
-        const addressBuffer = Buffer.from([Scale_Registers.NAU7802_ADCO_B2]);
-        await this.instance.i2cWrite(
-            this.address,
-            addressBuffer.length,
-            addressBuffer,
-        );
+        try {
+            const addressBuffer = Buffer.from([Scale_Registers.NAU7802_ADCO_B2]);
+            await this.instance.i2cWrite(
+                this.address,
+                addressBuffer.length,
+                addressBuffer,
+            );
 
-        const readBuffer = Buffer.alloc(3);
-        const bytes = await this.instance.i2cRead(
-            this.address,
-            3,
-            readBuffer,
-        );
+            const readBuffer = Buffer.alloc(3);
+            const bytes = await this.instance.i2cRead(
+                this.address,
+                3,
+                readBuffer,
+            );
 
-        if (this.options.debug) {
-            console.log('NAU7802.getReading :: bytes', bytes);
-            console.log('NAU7802.getReading :: bytes.buffer', bytes.buffer);
+            if (this.options.debug) {
+                console.log('NAU7802.getReading :: bytes', bytes);
+                console.log('NAU7802.getReading :: bytes.buffer', bytes.buffer);
+            }
+
+            let raw = bytes.buffer.readUIntBE(0, 3);
+            if (this.options.debug) {
+                console.log('NAU7802.getReading :: raw', raw);
+            }
+            //       MSB    -   MidSB   -  LSB
+            raw = raw << 16 || raw << 8 || raw;
+            if (this.options.debug) {
+                console.log('NAU7802.getReading :: raw transformed', raw);
+            }
+
+            // The raw value coming from the ADC is a 24-bit number, so the sign bit now
+            // resides on bit 23 (0 is LSB) of the uint32_t container. By shifting the
+            // value to the left, I move the sign bit to the MSB of the uint32_t container.
+            // By casting to a signed int32_t container I now have properly recovered
+            // the sign of the original value.
+            const valueShifted = raw << 8;
+            if (this.options.debug) {
+                console.log('NAU7802.getReading :: raw shifted', valueShifted);
+            }
+
+            // Shift the number back right to recover its intended magnitude.
+            const value = valueShifted >> 8;
+            if (this.options.debug) {
+                console.log('NAU7802.getReading :: value', value);
+            }
+
+            return value;
+        } catch (error) {
+            if (this.options.debug) {
+                console.log('NAU7802.getReading :: error', error);
+            }
+
+            return 0;
         }
-
-        let raw = bytes.buffer.readUIntBE(0, 3);
-        if (this.options.debug) {
-            console.log('NAU7802.getReading :: raw', raw);
-        }
-        //       MSB    -   MidSB   -  LSB
-        raw = raw << 16 || raw << 8 || raw;
-        if (this.options.debug) {
-            console.log('NAU7802.getReading :: raw transformed', raw);
-        }
-
-        // The raw value coming from the ADC is a 24-bit number, so the sign bit now
-        // resides on bit 23 (0 is LSB) of the uint32_t container. By shifting the
-        // value to the left, I move the sign bit to the MSB of the uint32_t container.
-        // By casting to a signed int32_t container I now have properly recovered
-        // the sign of the original value.
-        const valueShifted = raw << 8;
-        if (this.options.debug) {
-            console.log('NAU7802.getReading :: raw shifted', valueShifted);
-        }
-
-        // Shift the number back right to recover its intended magnitude.
-        const value = valueShifted >> 8;
-        if (this.options.debug) {
-            console.log('NAU7802.getReading :: value', value);
-        }
-
-        return value;
     }
 
     // Return the average of a given number of readings.
