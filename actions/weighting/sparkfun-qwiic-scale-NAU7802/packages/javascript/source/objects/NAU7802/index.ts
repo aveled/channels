@@ -674,11 +674,11 @@ class NAU7802 implements INAU7802 {
             return 0;
         }
 
-        await this.instance.writeByte(
-            this.address,
-            registerAddress,
-            1,
-        );
+        // await this.instance.writeByte(
+        //     this.address,
+        //     registerAddress,
+        //     1,
+        // );
 
 
         // await this.instance.writeQuick(
