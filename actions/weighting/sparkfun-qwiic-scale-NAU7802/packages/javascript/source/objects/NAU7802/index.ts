@@ -210,7 +210,7 @@ class NAU7802 implements INAU7802 {
             console.log('NAU7802.getReading :: bytes.buffer', bytes.buffer);
         }
 
-        let raw = bytes.buffer.readInt32BE();
+        let raw = bytes.buffer.readInt16BE();
         if (this.options.debug) {
             console.log('NAU7802.getReading :: raw', raw);
         }
@@ -563,7 +563,7 @@ class NAU7802 implements INAU7802 {
                 break;
             }
 
-            await delay(1);
+            await delay(10);
 
             counter += 1;
 
