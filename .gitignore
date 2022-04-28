@@ -40,10 +40,11 @@ bower_components
 .lock-wscript
 
 # Build
-/build
+build
 
 # Dependency directories
 node_modules/
+node_modules
 jspm_packages/
 
 # TypeScript cache
@@ -116,7 +117,3 @@ temp/
 .Trashes
 ehthumbs.db
 Thumbs.db
-
-
-
-### SPECIFIC ###
