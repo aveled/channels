@@ -2,11 +2,12 @@ const NAU7802 = require('../../distribution').default;
 
 
 
-const address = 0x45;
+const address = 0x2a;
 const scale = new NAU7802(
     address,
     {
-        debug: true,
+        // debug: true,
+        debug: false,
     },
 );
 
@@ -22,7 +23,7 @@ const loopRead = async  () => {
         await new Promise((resolve) => {
             setTimeout(() => {
                 resolve(true);
-            }, 500);
+            }, 10);
         });
     }
 }
@@ -37,8 +38,8 @@ const singleRead = async () => {
 
 
 const main = async () => {
-    singleRead();
-    // loopRead();
+    // singleRead();
+    loopRead();
 }
 
 
